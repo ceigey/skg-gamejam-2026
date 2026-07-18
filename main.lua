@@ -96,6 +96,18 @@ function _draw(dt)
   --   gfx.COLOR_RED, 0.25
   -- )
 
+  -- Rotating player sprite, not sure about camera lag yet...
+  -- (the maths will suck)
+  gfx.spr_ex(
+    1,
+    State.player.position.x - usagi.SPRITE_SIZE / 2,
+    State.player.position.y - usagi.SPRITE_SIZE / 2,
+    false,
+    false,
+    State.player.rotation + math.pi / 2,
+    gfx.COLOR_TRUE_WHITE, 1.0
+  )
+
   -- Drawing the sight lines (visual guide only)
   gfx.line_ex(
     State.sightlines.left.startpoint.x,
@@ -113,19 +125,6 @@ function _draw(dt)
     1,
     gfx.COLOR_RED, 0.25
   )
-
-  -- Rotating player sprite, not sure about camera lag yet...
-  -- (the maths will suck)
-  gfx.spr_ex(
-    1,
-    State.player.position.x - usagi.SPRITE_SIZE / 2,
-    State.player.position.y - usagi.SPRITE_SIZE / 2,
-    false,
-    false,
-    State.player.rotation + math.pi / 2,
-    gfx.COLOR_TRUE_WHITE, 1.0
-  )
-
 
   -- Drawing the mouse cursor
   -- gfx.circ_fill(State.mouse.position.x, State.mouse.position.y, 4, gfx.COLOR_RED, 0.5)
