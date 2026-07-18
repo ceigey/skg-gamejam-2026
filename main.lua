@@ -21,7 +21,8 @@ function _init()
       position = {
         x = 0,
         y = 0,
-      }
+      },
+      distance_from_player = 0,
     }
   }
 end
@@ -41,6 +42,8 @@ function _update(dt)
     y = mouse_y
   }
 
+  State.mouse.distance_from_player = util.vec_dist(State.player.position, State.mouse.position)
+
   -- because I'm forgetful
   -- https://gamedev.stackexchange.com/questions/14602/what-are-atan-and-atan2-used-for-in-games
   local rotation = math.atan(
@@ -51,9 +54,9 @@ function _update(dt)
 
   -- How to angle: https://stackoverflow.com/a/839931
   -- Whatever I have below actually works well for projecting beneath
-  local sightline_start_radius = 32
-  local sightline_end_radius = 320 + 180
-  local sightline_spread = math.pi / 32
+  local sightline_start_radius = 32                                -- I want a bit of distance between the player and the sight start to declutter the player
+  local sightline_end_radius = usagi.GAME_W / 2 + usagi.GAME_H / 2 -- drawing offscreen effectively (good? bad?)
+  local sightline_spread = math.pi / 32                            -- how much spread (doubles for start)
   State.sightlines = State.sightlines or {}
   State.sightlines.left = {
     startpoint = {
@@ -79,8 +82,11 @@ end
 
 ---@param dt number
 function _draw(dt)
+  -- Drawing the background
   gfx.clear(gfx.COLOR_WHITE)
 
+
+  -- I used to draw a main targeting line here but it's superfluous
   -- gfx.line_ex(
   --   State.player.position.x,
   --   State.player.position.y,
@@ -90,6 +96,7 @@ function _draw(dt)
   --   gfx.COLOR_RED, 0.25
   -- )
 
+  -- Drawing the sight lines (visual guide only)
   gfx.line_ex(
     State.sightlines.left.startpoint.x,
     State.sightlines.left.startpoint.y,
@@ -107,6 +114,8 @@ function _draw(dt)
     gfx.COLOR_RED, 0.25
   )
 
+  -- Rotating player sprite, not sure about camera lag yet...
+  -- (the maths will suck)
   gfx.spr_ex(
     1,
     State.player.position.x - usagi.SPRITE_SIZE / 2,
@@ -118,8 +127,13 @@ function _draw(dt)
   )
 
 
-  gfx.circ_fill(State.mouse.position.x, State.mouse.position.y, 4, gfx.COLOR_RED, 0.5)
-  gfx.circ(State.mouse.position.x, State.mouse.position.y, 6, gfx.COLOR_RED, 0.5)
+  -- Drawing the mouse cursor
+  -- gfx.circ_fill(State.mouse.position.x, State.mouse.position.y, 4, gfx.COLOR_RED, 0.5)
+  gfx.circ(State.mouse.position.x, State.mouse.position.y,
+    -- TODO: consider making this a constant and sharing with the sightline endpoint radius?
+    util.lerp(16, 64, State.mouse.distance_from_player / (usagi.GAME_W / 2)),
+    gfx.COLOR_RED,
+    0.25)
 
   gfx.text("Hello, Usagi!", 10, 10, gfx.COLOR_BLACK)
 end
