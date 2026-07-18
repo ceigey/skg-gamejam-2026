@@ -1,3 +1,6 @@
+local Util = require('core.util')
+
+
 function _config()
   ---@type Usagi.Config
   return {
@@ -46,11 +49,11 @@ function _update(dt)
 
   -- because I'm forgetful
   -- https://gamedev.stackexchange.com/questions/14602/what-are-atan-and-atan2-used-for-in-games
-  local rotation = math.atan(
+  local target_rotation = math.atan(
     State.mouse.position.y - State.player.position.y,
     State.mouse.position.x - State.player.position.x
   )
-  State.player.rotation = rotation
+  State.player.rotation = Util.clamp_radians(target_rotation, State.player.rotation, math.pi / 16)
 
   -- How to angle: https://stackoverflow.com/a/839931
   -- Whatever I have below actually works well for projecting beneath
@@ -134,5 +137,5 @@ function _draw(dt)
     gfx.COLOR_RED,
     0.25)
 
-  gfx.text("Hello, Usagi!", 10, 10, gfx.COLOR_BLACK)
+  gfx.text("Hello, Usagi! " .. State.player.rotation, 10, 10, gfx.COLOR_BLACK)
 end
