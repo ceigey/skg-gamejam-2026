@@ -137,5 +137,11 @@ function _draw(dt)
     gfx.COLOR_RED,
     0.25)
 
+  -- gfx.circ_fill(State.mouse.position.x, State.mouse.position.y,
+  --   -- TODO: consider making this a constant and sharing with the sightline endpoint radius?
+  --   util.lerp(16, 64, State.mouse.distance_from_player / (usagi.GAME_W / 2)),
+  --   gfx.COLOR_RED,
+  --   0.025)
+
   gfx.text("Hello, Usagi! " .. State.player.rotation, 10, 10, gfx.COLOR_BLACK)
 end
