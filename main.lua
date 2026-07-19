@@ -13,10 +13,12 @@ function _config()
 end
 
 function _init()
+  gfx.shader_set("crt")
   -- Live reload preserves globals across saved edits but resets locals.
   -- Stash mutable game state in a capitalized global like `State` so it
   -- survives reloads; F5 calls _init again to reset.
   State = {
+    time = 0,
     player = {
       rotation = 3.14 / 4
     },
@@ -32,6 +34,7 @@ end
 
 ---@param dt number
 function _update(dt)
+  State.time = State.time + dt
   local mouse_x, mouse_y = input.mouse()
 
   State.player.position = {
@@ -85,8 +88,16 @@ end
 
 ---@param dt number
 function _draw(dt)
+  -- gfx.shader_uniform("u_time", usagi.elapsed)
+
   -- Drawing the background
   gfx.clear(gfx.COLOR_WHITE)
+
+  -- Shader stuff
+  -- gfx.shader_uniform('u_time', State.time * 0.25)
+  gfx.shader_uniform('u_scanline', 0.5)
+  gfx.shader_uniform('u_resolution', { usagi.GAME_W, usagi.GAME_H })
+  gfx.shader_uniform('u_flat', 1)
 
 
   -- I used to draw a main targeting line here but it's superfluous
