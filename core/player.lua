@@ -14,6 +14,9 @@ local Player = {}
 ---@field left Player.Sightline
 ---@field right Player.Sightline
 
+---@class Player.Camera
+---@field position Usagi.Vec2
+
 ---@class Player.State
 ---@field rotation number
 ---@field position Usagi.Vec2
@@ -22,9 +25,10 @@ local Player = {}
 ---@field inertia Usagi.Vec2
 ---@field mouse Player.Mouse
 ---@field sightlines? Player.Sightlines
+---@field camera Player.Camera
 
 
-function Player.init(dt)
+function Player.init()
   ---@type Player.State
   return {
     position = { x = 0, y = 0 },
@@ -32,6 +36,12 @@ function Player.init(dt)
     velocity = { x = 0, y = 0 },
     inertia = { x = 0, y = 0 },
     rotation = 3.14 / 4,
+    camera = {
+      position = {
+        x = usagi.GAME_W / 2 - usagi.SPRITE_SIZE / 2,
+        y = usagi.GAME_H / 2 - usagi.SPRITE_SIZE / 2
+      }
+    },
     mouse = {
       position = {
         x = 0,
@@ -46,10 +56,18 @@ end
 ---@param dt number
 function Player.update_from_mouse_input(player, dt)
   local mouse_x, mouse_y = input.mouse()
-  player.position = {
-    x = usagi.GAME_W / 2 - usagi.SPRITE_SIZE / 2,
-    y = usagi.GAME_H / 2 - usagi.SPRITE_SIZE / 2
+
+
+  local default_camera_x = usagi.GAME_W / 2 - usagi.SPRITE_SIZE / 2
+  local default_camera_y = usagi.GAME_H / 2 - usagi.SPRITE_SIZE / 2
+
+  local mouse_x_offset = (default_camera_x - mouse_x) * 0.1
+  local mouse_y_offset = (default_camera_y - mouse_y) * 0.1
+  player.camera.position = {
+    x = usagi.GAME_W / 2 - usagi.SPRITE_SIZE / 2 + mouse_x_offset,
+    y = usagi.GAME_H / 2 - usagi.SPRITE_SIZE / 2 + mouse_y_offset
   }
+
 
   player.mouse = player.mouse or {}
   player.mouse.position = {
@@ -57,15 +75,15 @@ function Player.update_from_mouse_input(player, dt)
     y = mouse_y
   }
 
-  player.mouse.distance_from_player = util.vec_dist(State.player.position, State.mouse.position)
+  player.mouse.distance_from_player = util.vec_dist(player.camera.position, player.mouse.position)
 end
 
 ---@param player Player.State
 ---@param dt number
 function Player.update_rotation(player, dt)
   local target_rotation = math.atan(
-    player.mouse.position.y - State.player.position.y,
-    player.mouse.position.x - State.player.position.x
+    player.mouse.position.y - player.camera.position.y,
+    player.mouse.position.x - player.camera.position.x
   )
   player.rotation = Util.clamp_radians(target_rotation, State.player.rotation, math.pi / 16)
 end
@@ -81,22 +99,22 @@ function Player.update_sightlines(player, dt)
   player.sightlines = player.sightlines or {}
   player.sightlines.left = {
     startpoint = {
-      x = player.position.x + sightline_start_radius * math.cos(player.rotation - sightline_spread * 2),
-      y = player.position.y + sightline_start_radius * math.sin(player.rotation - sightline_spread * 2),
+      x = player.camera.position.x + sightline_start_radius * math.cos(player.rotation - sightline_spread * 2),
+      y = player.camera.position.y + sightline_start_radius * math.sin(player.rotation - sightline_spread * 2),
     },
     endpoint = {
-      x = player.position.x + sightline_end_radius * math.cos(player.rotation - sightline_spread),
-      y = player.position.y + sightline_end_radius * math.sin(player.rotation - sightline_spread),
+      x = player.camera.position.x + sightline_end_radius * math.cos(player.rotation - sightline_spread),
+      y = player.camera.position.y + sightline_end_radius * math.sin(player.rotation - sightline_spread),
     },
   }
   player.sightlines.right = {
     startpoint = {
-      x = player.position.x + sightline_start_radius * math.cos(player.rotation + sightline_spread * 2),
-      y = player.position.y + sightline_start_radius * math.sin(player.rotation + sightline_spread * 2),
+      x = player.camera.position.x + sightline_start_radius * math.cos(player.rotation + sightline_spread * 2),
+      y = player.camera.position.y + sightline_start_radius * math.sin(player.rotation + sightline_spread * 2),
     },
     endpoint = {
-      x = player.position.x + sightline_end_radius * math.cos(player.rotation + sightline_spread),
-      y = player.position.y + sightline_end_radius * math.sin(player.rotation + sightline_spread),
+      x = player.camera.position.x + sightline_end_radius * math.cos(player.rotation + sightline_spread),
+      y = player.camera.position.y + sightline_end_radius * math.sin(player.rotation + sightline_spread),
     },
   }
 end
@@ -116,8 +134,8 @@ function Player.draw_main_sprite(player, dt)
   -- (the maths will suck)
   gfx.spr_ex(
     1,
-    player.position.x - usagi.SPRITE_SIZE / 2,
-    player.position.y - usagi.SPRITE_SIZE / 2,
+    player.camera.position.x - usagi.SPRITE_SIZE / 2,
+    player.camera.position.y - usagi.SPRITE_SIZE / 2,
     false,
     false,
     player.rotation + math.pi / 2,
