@@ -98,6 +98,9 @@ function _draw(dt)
   gfx.shader_uniform('u_scanline', 0.5)
   gfx.shader_uniform('u_resolution', { usagi.GAME_W, usagi.GAME_H })
   gfx.shader_uniform('u_flat', 1)
+  gfx.shader_uniform('u_ca', 0.0010)
+  gfx.shader_uniform('u_scanline_strength', 0.1)
+  -- gfx.shader_uniform('u_vertical_scanlines', 1)
 
 
   -- I used to draw a main targeting line here but it's superfluous

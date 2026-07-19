@@ -1,5 +1,8 @@
 #version 100
 
+// From Usagi Examples
+// https://github.com/brettchalupa/usagi/tree/main/examples/shader/shaders
+
 precision mediump float;
 
 varying vec2 fragTexCoord;
@@ -12,8 +15,22 @@ uniform float u_scanline;
 uniform vec2 u_resolution;
 
 // Added by me (ceigey)
+// Controls for curve if you really wanna mess with them.
 uniform vec2 u_curve;
+// 1 = don't curve, 0 = curve
 uniform bool u_flat;
+// Chromatic abberation
+// Usagi default was 0.0015, 0.0010 sits better IMO.
+// 0 = off
+uniform float u_ca;
+// 0.4 default
+// 0 = off
+uniform float u_scanline_strength;
+uniform bool u_vertical_scanlines;
+
+
+out vec4 finalColor;
+
 
 vec2 curve(vec2 uv) {
     uv = uv * 2.0 - 1.0;
@@ -33,14 +50,19 @@ void main() {
         return;
     }
 
-    float ca = 0.0015;
+    float ca = u_ca;
     vec3 col;
     col.r = texture2D(texture0, uv + vec2(ca, 0.0)).r;
     col.g = texture2D(texture0, uv).g;
     col.b = texture2D(texture0, uv - vec2(ca, 0.0)).b;
 
     float scan = sin(uv.y * u_resolution.y * 3.14159 * 2.0);
-    col *= 1.0 - u_scanline * 0.4 * (0.5 - 0.5 * scan);
+    col *= 1.0 - u_scanline * u_scanline_strength * (0.5 - 0.5 * scan);
+
+    if (u_vertical_scanlines) {
+        float scanx = sin(uv.x * u_resolution.x * 3.14159 * 2.0);
+        col *= 1.0 - u_scanline * u_scanline_strength * (0.5 - 0.5 * scanx);
+    }
 
     vec2 v = (fragTexCoord - 0.5);
     float vig = 1.0 - dot(v, v) * 1.2;
