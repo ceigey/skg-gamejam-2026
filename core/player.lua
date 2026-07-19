@@ -70,6 +70,9 @@ function Player.update_from_mouse_input(player, dt)
 
   local mouse_x_offset = (default_camera_x - mouse_x) * 0.1
   local mouse_y_offset = (default_camera_y - mouse_y) * 0.1
+
+  -- TODO: This should probably be camera.offset
+  -- with camera.position handled by something else
   player.camera.position = {
     x = usagi.GAME_W / 2 - usagi.SPRITE_SIZE / 2 + mouse_x_offset,
     y = usagi.GAME_H / 2 - usagi.SPRITE_SIZE / 2 + mouse_y_offset
