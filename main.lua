@@ -1,6 +1,7 @@
 local Util = require('core.util')
 local Player = require('core.player')
 
+PARALLAX_FACTORS = { 0.2, 0.4, 0.6, 0.8 }
 
 function _config()
   ---@type Usagi.Config
@@ -35,6 +36,21 @@ function _draw(dt)
 
   -- Drawing the background
   gfx.clear(gfx.COLOR_WHITE)
+
+
+  for x = 0, usagi.GAME_W, 64 do
+    for y = 0, usagi.GAME_H, 64 do
+      for i, parallax_factor in ipairs(PARALLAX_FACTORS) do
+        gfx.circ_fill(
+          (x - State.player.position.x * parallax_factor+ State.player.camera.position.x * parallax_factor),
+          (y - State.player.position.y * parallax_factor + State.player.camera.position.y * parallax_factor),
+          10 * parallax_factor,
+          gfx.COLOR_LIGHT_GRAY,
+          parallax_factor - 0.1
+        )
+      end
+    end
+  end
 
   -- Shader stuff
   -- gfx.shader_uniform('u_time', State.time * 0.25)
