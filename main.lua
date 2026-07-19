@@ -20,15 +20,15 @@ function _init()
   State = {
     time = 0,
     player = {
-      rotation = 3.14 / 4
+      rotation = 3.14 / 4,
+      mouse = {
+        position = {
+          x = 0,
+          y = 0,
+        },
+        distance_from_player = 0,
+      }
     },
-    mouse = {
-      position = {
-        x = 0,
-        y = 0,
-      },
-      distance_from_player = 0,
-    }
   }
 end
 
