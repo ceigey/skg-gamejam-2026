@@ -1,7 +1,7 @@
 local Util = require('core.util')
 local Player = require('core.player')
 
-PARALLAX_FACTORS = { 0.2, 0.4, 0.6, 0.8 }
+PARALLAX_FACTORS =  { 0.2, 0.4, 0.6, 0.8 }
 
 function _config()
   ---@type Usagi.Config
@@ -38,18 +38,20 @@ function _draw(dt)
   gfx.clear(gfx.COLOR_WHITE)
 
 
-  for x = util.round(State.player.position.x) - usagi.GAME_W, util.round(State.player.position.x) + usagi.GAME_W, 1 do
-    for y = util.round(State.player.position.y) - usagi.GAME_H, util.round(State.player.position.y) + usagi.GAME_H, 1 do
-      if x % 64 == 0 and y % 64 == 0 then
-        for i, parallax_factor in ipairs(PARALLAX_FACTORS) do
-          gfx.circ_fill(
-            (x - State.player.position.x * parallax_factor + State.player.camera.position.x * parallax_factor),
-            (y - State.player.position.y * parallax_factor + State.player.camera.position.y * parallax_factor),
-            10 * parallax_factor,
-            gfx.COLOR_LIGHT_GRAY,
-            parallax_factor - 0.1
-          )
-        end
+  local grid_width = usagi.SPRITE_SIZE * 4
+  local grid_offset_x = util.round(State.player.position.x) % grid_width
+  local grid_offset_y = util.round(State.player.position.y) % grid_width
+
+  for i, parallax_factor in ipairs(PARALLAX_FACTORS) do
+    for x = 0 - grid_offset_x * 2, (usagi.GAME_W + grid_offset_x * 2) / parallax_factor, grid_width do
+      for y = 0 - grid_offset_y * 2, (usagi.GAME_H + grid_offset_y * 2) / parallax_factor, grid_width do
+        gfx.circ_fill(
+          (x * parallax_factor + State.player.camera.offset.x * parallax_factor),
+          (y * parallax_factor + State.player.camera.offset.y * parallax_factor),
+          10 * parallax_factor,
+          gfx.COLOR_LIGHT_GRAY,
+          parallax_factor - 0.1
+        )
       end
     end
   end

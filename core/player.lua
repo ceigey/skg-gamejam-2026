@@ -21,6 +21,7 @@ Player.NORMAL_DRAG = 0.95
 
 ---@class Player.Camera
 ---@field position Usagi.Vec2
+---@field offset Usagi.Vec2
 
 ---@class Player.State
 ---@field rotation number
@@ -47,6 +48,10 @@ function Player.init()
       position = {
         x = usagi.GAME_W / 2 - usagi.SPRITE_SIZE / 2,
         y = usagi.GAME_H / 2 - usagi.SPRITE_SIZE / 2
+      },
+      offset = {
+        x = 0,
+        y = 0,
       }
     },
     mouse = {
@@ -68,14 +73,16 @@ function Player.update_from_mouse_input(player, dt)
   local default_camera_x = usagi.GAME_W / 2 - usagi.SPRITE_SIZE / 2
   local default_camera_y = usagi.GAME_H / 2 - usagi.SPRITE_SIZE / 2
 
-  local mouse_x_offset = (default_camera_x - mouse_x) * 0.1
-  local mouse_y_offset = (default_camera_y - mouse_y) * 0.1
+  player.camera.offset = {
+    x = (default_camera_x - mouse_x) * 0.1,
+    y = (default_camera_y - mouse_y) * 0.1,
+  }
 
   -- TODO: This should probably be camera.offset
   -- with camera.position handled by something else
   player.camera.position = {
-    x = usagi.GAME_W / 2 - usagi.SPRITE_SIZE / 2 + mouse_x_offset,
-    y = usagi.GAME_H / 2 - usagi.SPRITE_SIZE / 2 + mouse_y_offset
+    x = usagi.GAME_W / 2 - usagi.SPRITE_SIZE / 2 + player.camera.offset.x,
+    y = usagi.GAME_H / 2 - usagi.SPRITE_SIZE / 2 + player.camera.offset.y
   }
 
 
