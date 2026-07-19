@@ -47,5 +47,5 @@ function _draw(dt)
 
 
   Player.draw(State.player, dt)
-  gfx.text("Hello, Usagi! " .. State.player.rotation, 10, 10, gfx.COLOR_BLACK)
+  gfx.text("Hello, Usagi! " .. usagi.dump(State.player.position), 10, 10, gfx.COLOR_BLACK)
 end

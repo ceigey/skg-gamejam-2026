@@ -1,6 +1,11 @@
 local Util = require('core.util')
+local Controls = require('core.controls')
+local Vector = require('core.vector')
+
 local Player = {}
 
+Player.INITIAL_MAX_THRUST = 30 -- px/s
+Player.NORMAL_DRAG = 0.95
 
 ---@class Player.Mouse
 ---@field position Usagi.Vec2
@@ -22,10 +27,11 @@ local Player = {}
 ---@field position Usagi.Vec2
 ---@field direction Usagi.Vec2
 ---@field velocity Usagi.Vec2
----@field inertia Usagi.Vec2
+---@field delta Usagi.Vec2
 ---@field mouse Player.Mouse
 ---@field sightlines? Player.Sightlines
 ---@field camera Player.Camera
+---@field max_thrust number
 
 
 function Player.init()
@@ -34,8 +40,9 @@ function Player.init()
     position = { x = 0, y = 0 },
     direction = { x = 0, y = 0 },
     velocity = { x = 0, y = 0 },
-    inertia = { x = 0, y = 0 },
+    delta = { x = 0, y = 0 },
     rotation = 3.14 / 4,
+    max_thrust = Player.INITIAL_MAX_THRUST,
     camera = {
       position = {
         x = usagi.GAME_W / 2 - usagi.SPRITE_SIZE / 2,
@@ -91,7 +98,6 @@ end
 ---@param player Player.State
 ---@param dt number
 function Player.update_sightlines(player, dt)
-
   local sightline_start_radius = 32                                -- I want a bit of distance between the player and the sight start to declutter the player
   local sightline_end_radius = usagi.GAME_W / 2 + usagi.GAME_H / 2 -- drawing offscreen effectively (good? bad?)
   local sightline_spread = math.pi / 32
@@ -121,10 +127,44 @@ end
 
 ---@param player Player.State
 ---@param dt number
+function Player.update_from_keyboard(player, dt)
+  -- Update direction (required for movement)
+  player.direction = Controls.normalized_keypad_direction(input)
+end
+
+---@param player Player.State
+---@param dt number
+function Player.apply_drag_to_velocity(player, dt)
+  player.velocity = Vector.multiplied(player.velocity, Player.NORMAL_DRAG)
+  if math.abs(player.velocity.x) < 0.1 then
+    player.velocity.x = 0
+  end
+  if math.abs(player.velocity.y) < 0.1 then
+    player.velocity.y = 0
+  end
+end
+
+---@param player Player.State
+---@param dt number
+function Player.update_movement(player, dt)
+  -- Direction + Thrust -> Delta -> Velocity -> Position
+  player.delta = Vector.multiplied(player.direction, player.max_thrust * dt)
+  player.velocity = Vector.add(player.velocity, player.delta)
+
+  -- Decay velocity
+  Player.apply_drag_to_velocity(player, dt)
+
+  player.position = Vector.add(player.position, player.velocity)
+end
+
+---@param player Player.State
+---@param dt number
 function Player.update(player, dt)
   Player.update_from_mouse_input(player, dt)
   Player.update_rotation(player, dt)
   Player.update_sightlines(player, dt)
+  Player.update_from_keyboard(player, dt)
+  Player.update_movement(player, dt)
 end
 
 ---@param player Player.State
