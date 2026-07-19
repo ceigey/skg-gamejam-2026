@@ -38,16 +38,18 @@ function _draw(dt)
   gfx.clear(gfx.COLOR_WHITE)
 
 
-  for x = 0, usagi.GAME_W, 64 do
-    for y = 0, usagi.GAME_H, 64 do
-      for i, parallax_factor in ipairs(PARALLAX_FACTORS) do
-        gfx.circ_fill(
-          (x - State.player.position.x * parallax_factor+ State.player.camera.position.x * parallax_factor),
-          (y - State.player.position.y * parallax_factor + State.player.camera.position.y * parallax_factor),
-          10 * parallax_factor,
-          gfx.COLOR_LIGHT_GRAY,
-          parallax_factor - 0.1
-        )
+  for x = util.round(State.player.position.x) - usagi.GAME_W, util.round(State.player.position.x) + usagi.GAME_W, 1 do
+    for y = util.round(State.player.position.y) - usagi.GAME_H, util.round(State.player.position.y) + usagi.GAME_H, 1 do
+      if x % 64 == 0 and y % 64 == 0 then
+        for i, parallax_factor in ipairs(PARALLAX_FACTORS) do
+          gfx.circ_fill(
+            (x - State.player.position.x * parallax_factor + State.player.camera.position.x * parallax_factor),
+            (y - State.player.position.y * parallax_factor + State.player.camera.position.y * parallax_factor),
+            10 * parallax_factor,
+            gfx.COLOR_LIGHT_GRAY,
+            parallax_factor - 0.1
+          )
+        end
       end
     end
   end
