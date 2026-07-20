@@ -45,13 +45,26 @@ function _draw(dt)
   for i, parallax_factor in ipairs(PARALLAX_FACTORS) do
     for x = 0 - grid_offset_x * 2, (usagi.GAME_W + grid_offset_x * 2) / parallax_factor, grid_width do
       for y = 0 - grid_offset_y * 2, (usagi.GAME_H + grid_offset_y * 2) / parallax_factor, grid_width do
+        local particle_position = {
+          x = (x * parallax_factor + State.player.camera.offset.x * parallax_factor),
+          y = (y * parallax_factor + State.player.camera.offset.y * parallax_factor),
+        }
+        local distance_from_player = util.vec_dist(State.player.camera.position, particle_position)
         gfx.circ_fill(
-          (x * parallax_factor + State.player.camera.offset.x * parallax_factor),
-          (y * parallax_factor + State.player.camera.offset.y * parallax_factor),
-          10 * parallax_factor,
-          gfx.COLOR_LIGHT_GRAY,
+          particle_position.x,
+          particle_position.y,
+          12 / parallax_factor, -- 12 / parallax_factor + (distance_from_player / 10) ,
+          gfx.COLOR_TRUE_WHITE,
           parallax_factor - 0.1
         )
+        -- gfx.rect_fill(
+        --   (x * parallax_factor + State.player.camera.offset.x * parallax_factor),
+        --   (y * parallax_factor + State.player.camera.offset.y * parallax_factor),
+        --   100 * parallax_factor,
+        --   100 * parallax_factor,
+        --   gfx.COLOR_WHITE,
+        --   parallax_factor - 0.1
+        -- )
       end
     end
   end
