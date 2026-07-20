@@ -6,6 +6,8 @@ local Player = {}
 
 Player.INITIAL_MAX_THRUST = 30 -- px/s
 Player.NORMAL_DRAG = 0.95
+Player.SHADOW_BASE_OPACITY = 0.1
+Player.SHADOW_ZINDEX = 64
 
 ---@class Player.Mouse
 ---@field position Usagi.Vec2
@@ -178,10 +180,75 @@ function Player.update(player, dt)
 end
 
 ---@param player Player.State
+---@param zindex? number default 64
+function Player.calculate_shadow_position(player, zindex)
+  zindex = zindex or Player.SHADOW_ZINDEX
+  ---@type Usagi.Vec2
+  return {
+    x = player.camera.position.x - zindex - usagi.SPRITE_SIZE / 2,
+    y = player.camera.position.y + zindex - usagi.SPRITE_SIZE / 2,
+  }
+end
+
+---@param player Player.State
+---@param zindex? number default 64
+---@param opacity? number default 0.1
+function Player.draw_player_shadow(player, zindex, opacity)
+  zindex = zindex or Player.SHADOW_ZINDEX
+  opacity = opacity or Player.SHADOW_BASE_OPACITY
+  local shadow_position = Player.calculate_shadow_position(player, zindex)
+  gfx.spr_ex(
+    1,
+    shadow_position.x,
+    shadow_position.y,
+    false,
+    false,
+    player.rotation + math.pi / 2,
+    gfx.COLOR_BLACK,
+    opacity
+  )
+end
+
+
+
+
+---@param player Player.State
+---@param dt number
+function Player.draw_player_trail(player, dt)
+  -- Rotating player sprite, not sure about camera lag yet...
+  -- (the maths will suck)
+  local trail_color = gfx.COLOR_BLUE
+  local trail_opacity = 0.1
+
+  gfx.spr_ex(
+    1,
+    player.camera.position.x - player.velocity.x * 0.5 - usagi.SPRITE_SIZE / 2,
+    player.camera.position.y - player.velocity.y * 0.5 - usagi.SPRITE_SIZE / 2,
+    false,
+    false,
+    player.rotation + math.pi / 2,
+    trail_color,
+    trail_opacity
+  )
+
+  gfx.spr_ex(
+    1,
+    player.camera.position.x - player.velocity.x - usagi.SPRITE_SIZE / 2,
+    player.camera.position.y - player.velocity.y - usagi.SPRITE_SIZE / 2,
+    false,
+    false,
+    player.rotation + math.pi / 2,
+    trail_color,
+    trail_opacity
+  )
+end
+
+---@param player Player.State
 ---@param dt number
 function Player.draw_main_sprite(player, dt)
   -- Rotating player sprite, not sure about camera lag yet...
   -- (the maths will suck)
+
   gfx.spr_ex(
     1,
     player.camera.position.x - usagi.SPRITE_SIZE / 2,
@@ -199,6 +266,7 @@ function Player.draw_sightlines(sightlines, dt)
   if not sightlines then
     return -- Sorry, nothing to draw!
   end
+
   -- Drawing the sight lines (visual guide only)
   gfx.line_ex(
     sightlines.left.startpoint.x,
@@ -233,6 +301,7 @@ end
 ---@param player Player.State
 ---@param dt number
 function Player.draw(player, dt)
+  -- Player.draw_player_trail(player, dt)
   Player.draw_main_sprite(player, dt)
   Player.draw_sightlines(player.sightlines, dt)
   Player.draw_targeting_circle(player.mouse, dt)
