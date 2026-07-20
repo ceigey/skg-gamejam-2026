@@ -38,4 +38,29 @@ function Vector.add(v1, v2)
   }
 end
 
+
+---@param v1 Usagi.Vec2
+---@param v2 Usagi.Vec2
+---@return Usagi.Vec2
+function Vector.subtract(v1, v2)
+  return {
+    x = v1.x - v2.x,
+    y = v1.y - v2.y,
+  }
+end
+
+
+---@param v Usagi.Vec2
+---@return number
+function Vector.radians(v)
+  return math.atan(v.y, v.x)
+end
+
+
+---@param v Usagi.Vec2
+---@return number
+function Vector.magnitude(v)
+  return math.sqrt(v.x^2 + v.y^2)
+end
+
 return Vector

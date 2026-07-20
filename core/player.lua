@@ -1,6 +1,7 @@
 local Util = require('core.util')
 local Controls = require('core.controls')
 local Vector = require('core.vector')
+local PlayerBullet = require('core.player_bullet')
 
 local Player = {}
 
@@ -8,6 +9,8 @@ Player.INITIAL_MAX_THRUST = 30 -- px/s
 Player.NORMAL_DRAG = 0.95
 Player.SHADOW_BASE_OPACITY = 0.1
 Player.SHADOW_ZINDEX = 64
+Player.STARTING_FIRE_DELAY = 0.02 -- seconds... about 5 frames
+Player.DRAW_ROTATION_OFFSET =  math.pi / 2
 
 ---@class Player.Mouse
 ---@field position Usagi.Vec2
@@ -25,6 +28,18 @@ Player.SHADOW_ZINDEX = 64
 ---@field position Usagi.Vec2
 ---@field offset Usagi.Vec2
 
+---@class Player.Cannon.Placement
+---@field center_offset Usagi.Vec2 e.g. x=4 y=14, x=-4 y=14, etc...
+
+---@class Player.Cannons.State
+---@field primed_index integer 1 to 4, first 2x are inner, last 2x are outer
+---@field fire_delay number
+---@field fire_timer number when the last shot was fired
+---@field is_firing boolean
+---@field placements Player.Cannon.Placement[]
+
+
+
 ---@class Player.State
 ---@field rotation number
 ---@field position Usagi.Vec2
@@ -35,6 +50,8 @@ Player.SHADOW_ZINDEX = 64
 ---@field sightlines? Player.Sightlines
 ---@field camera Player.Camera
 ---@field max_thrust number
+---@field cannons Player.Cannons.State
+---@field bullets PlayerBullet.State[]
 
 
 function Player.init()
@@ -62,7 +79,28 @@ function Player.init()
         y = 0,
       },
       distance_from_player = 0,
-    }
+    },
+    cannons = {
+      fire_delay = Player.STARTING_FIRE_DELAY,
+      fire_timer = Player.STARTING_FIRE_DELAY,
+      primed_index = 0,
+      is_firing = false,
+      placements = {
+        {
+          center_offset = { x = -4, y = -14 },
+        },
+        {
+          center_offset = { x = 4, y = -14 },
+        },
+        {
+          center_offset = { x = -8, y = -12 },
+        },
+        {
+          center_offset = { x = 8, y = -12 },
+        }
+      }
+    },
+    bullets = {},
   }
 end
 
@@ -169,6 +207,47 @@ function Player.update_movement(player, dt)
   player.position = Vector.add(player.position, player.velocity)
 end
 
+
+---@param player Player.State
+---@param position? Usagi.Vec2
+function Player.add_bullet(player, position)
+  local position = position or player.position
+  local bullet = PlayerBullet.new(
+    position,
+    1.0,
+    player.rotation + math.pi
+  )
+  table.insert(player.bullets, bullet)
+end
+
+---@param player Player.State
+---@param dt number
+function Player.update_firing(player, dt)
+  player.cannons.fire_timer = player.cannons.fire_timer - dt
+  player.cannons.is_firing = input.held(input.BTN1)
+
+
+  if player.cannons.fire_timer <= (0 - player.cannons.fire_delay) then
+    player.cannons.primed_index = 1 -- reset to first cannon
+  end
+
+  if player.cannons.fire_timer <= 0 and player.cannons.is_firing then
+    print("FIRING BULLETS" .. player.cannons.primed_index)
+    local cannon = player.cannons.placements[player.cannons.primed_index]
+    local offset_angle = Vector.radians(cannon.center_offset)
+    local magnitude = Vector.magnitude(cannon.center_offset)
+    local position = Vector.add(player.position, cannon.center_offset)
+    local rotated_position = {
+      x = player.position.x + magnitude * math.cos(player.rotation - offset_angle),
+      y = player.position.y + magnitude * math.sin(player.rotation - offset_angle),
+    }
+    Player.add_bullet(player, rotated_position)
+    player.cannons.primed_index = (player.cannons.primed_index) % 4 + 1
+    player.cannons.fire_timer = player.cannons.fire_delay
+  end
+end
+
+
 ---@param player Player.State
 ---@param dt number
 function Player.update(player, dt)
@@ -177,6 +256,7 @@ function Player.update(player, dt)
   Player.update_sightlines(player, dt)
   Player.update_from_keyboard(player, dt)
   Player.update_movement(player, dt)
+  Player.update_firing(player, dt)
 end
 
 ---@param player Player.State
@@ -203,7 +283,7 @@ function Player.draw_player_shadow(player, zindex, opacity)
     shadow_position.y,
     false,
     false,
-    player.rotation + math.pi / 2,
+    player.rotation + Player.DRAW_ROTATION_OFFSET,
     gfx.COLOR_BLACK,
     opacity
   )
@@ -226,7 +306,7 @@ function Player.draw_player_trail(player, dt)
     player.camera.position.y - player.velocity.y * 0.5 - usagi.SPRITE_SIZE / 2,
     false,
     false,
-    player.rotation + math.pi / 2,
+    player.rotation + Player.DRAW_ROTATION_OFFSET,
     trail_color,
     trail_opacity
   )
@@ -237,7 +317,7 @@ function Player.draw_player_trail(player, dt)
     player.camera.position.y - player.velocity.y - usagi.SPRITE_SIZE / 2,
     false,
     false,
-    player.rotation + math.pi / 2,
+    player.rotation + Player.DRAW_ROTATION_OFFSET,
     trail_color,
     trail_opacity
   )
@@ -255,7 +335,7 @@ function Player.draw_main_sprite(player, dt)
     player.camera.position.y - usagi.SPRITE_SIZE / 2,
     false,
     false,
-    player.rotation + math.pi / 2,
+    player.rotation + Player.DRAW_ROTATION_OFFSET,
     gfx.COLOR_TRUE_WHITE, 1.0
   )
 end
