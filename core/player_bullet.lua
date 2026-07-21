@@ -126,7 +126,7 @@ function PlayerBullet.draw(bullet, player, dt)
     camera_position.x,
     camera_position.y,
     2,
-    gfx.COLOR_PEACH
+    gfx.COLOR_ORANGE
   )
   -- gfx.circ_fill(
   --   camera_position.x,
