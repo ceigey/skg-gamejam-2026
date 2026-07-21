@@ -87,16 +87,16 @@ function Player.init()
       is_firing = false,
       placements = {
         {
-          center_offset = { x = -4, y = -4 },
+          center_offset = { x = -4, y = 10 },
         },
         {
-          center_offset = { x = 4, y = -4 },
+          center_offset = { x = 4, y = 10  },
         },
         {
-          center_offset = { x = -8, y = -2 },
+          center_offset = { x = -8, y = 8 },
         },
         {
-          center_offset = { x = 8, y = -2 },
+          center_offset = { x = 8, y = 8 },
         }
       }
     },
@@ -215,7 +215,9 @@ function Player.add_bullet(player, position)
   local bullet = PlayerBullet.new(
     position,
     1.0,
-    player.rotation + math.pi
+    player.rotation,
+    player.velocity
+    -- TODO: Need to adjust the speed by the player's velocity!
   )
   table.insert(player.bullets, bullet)
 end
@@ -238,7 +240,7 @@ function Player.update_firing(player, dt)
     local magnitude = Vector.magnitude(cannon.center_offset)
     local target_angle = player.rotation + offset_angle - math.pi / 2
     local rotated_position = Vector.add(player.position, util.vec_from_angle(target_angle, magnitude))
-    rotated_position = Vector.add(rotated_position, { x = 0, y = -usagi.SPRITE_SIZE/2 })
+    --rotated_position = Vector.add(rotated_position, { x = 0, y = -usagi.SPRITE_SIZE/2 })
     -- local rotated_position = {
     --   x = player.position.x + magnitude * math.cos(player.rotation - offset_angle),
     --   y = player.position.y + magnitude * math.sin(player.rotation - offset_angle),
