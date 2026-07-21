@@ -87,16 +87,16 @@ function Player.init()
       is_firing = false,
       placements = {
         {
-          center_offset = { x = -4, y = -14 },
+          center_offset = { x = -4, y = -4 },
         },
         {
-          center_offset = { x = 4, y = -14 },
+          center_offset = { x = 4, y = -4 },
         },
         {
-          center_offset = { x = -8, y = -12 },
+          center_offset = { x = -8, y = -2 },
         },
         {
-          center_offset = { x = 8, y = -12 },
+          center_offset = { x = 8, y = -2 },
         }
       }
     },
@@ -236,11 +236,13 @@ function Player.update_firing(player, dt)
     local cannon = player.cannons.placements[player.cannons.primed_index]
     local offset_angle = Vector.radians(cannon.center_offset)
     local magnitude = Vector.magnitude(cannon.center_offset)
-    local position = Vector.add(player.position, cannon.center_offset)
-    local rotated_position = {
-      x = player.position.x + magnitude * math.cos(player.rotation - offset_angle),
-      y = player.position.y + magnitude * math.sin(player.rotation - offset_angle),
-    }
+    local target_angle = player.rotation + offset_angle - math.pi / 2
+    local rotated_position = Vector.add(player.position, util.vec_from_angle(target_angle, magnitude))
+    rotated_position = Vector.add(rotated_position, { x = 0, y = -usagi.SPRITE_SIZE/2 })
+    -- local rotated_position = {
+    --   x = player.position.x + magnitude * math.cos(player.rotation - offset_angle),
+    --   y = player.position.y + magnitude * math.sin(player.rotation - offset_angle),
+    -- }
     Player.add_bullet(player, rotated_position)
     player.cannons.primed_index = (player.cannons.primed_index) % 4 + 1
     player.cannons.fire_timer = player.cannons.fire_delay
