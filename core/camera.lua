@@ -53,6 +53,14 @@ function Camera.approach_target(camera)
     x = util.lerp(camera.position.x, camera.target.x, 0.5),
     y = util.lerp(camera.position.y, camera.target.y, 0.5)
   }
+
+  if math.abs(camera.target.x - camera.position.x) < 0.1 then
+    camera.position.x = camera.target.x
+  end
+
+  if math.abs(camera.target.y - camera.position.y) < 0.1 then
+    camera.position.y = camera.target.y
+  end
 end
 
 

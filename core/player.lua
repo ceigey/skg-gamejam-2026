@@ -252,7 +252,7 @@ function Player.update_firing(player, dt)
   end
 
   if player.cannons.fire_timer <= 0 and player.cannons.is_firing then
-    print("FIRING BULLETS" .. player.cannons.primed_index)
+    -- print("FIRING BULLETS" .. player.cannons.primed_index)
     local cannon = player.cannons.placements[player.cannons.primed_index]
     local offset_angle = Vector.radians(cannon.center_offset)
     local magnitude = Vector.magnitude(cannon.center_offset)
