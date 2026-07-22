@@ -2,6 +2,7 @@ local Util = require('core.util')
 local CloudParallax = require('core.cloud_parallax')
 local Player = require('core.player')
 local PlayerBullet = require('core.player_bullet')
+local Camera = require('core.camera')
 
 PARALLAX_FACTORS =  { 0.2, 0.4, 0.6, 0.8 }
 
@@ -27,15 +28,30 @@ function _init()
     ---@type CloudParallax.State
     cloud_parallax = {
       particles = {}
-    }
+    },
+    camera = Camera.init()
   }
+
+  Camera.set_position(State.camera, State.player.position)
 end
 
 ---@param dt number
 function _update(dt)
+  Player.update_entity_camera(State.player, State.camera)
   Player.update(State.player, dt)
+
+  -- Camera work!
+  Camera.set_target(
+    State.camera,
+    State.player.position
+  )
+  local lookahead = Camera.calculate_lookahead_offset(State.camera, State.player.mouse.position)
+  Camera.lookahead(State.camera, lookahead)
+  Camera.update(State.camera, dt)
+
   CloudParallax.update(State.cloud_parallax, State.player)
   PlayerBullet.update_all(State.player.bullets, State.player, dt)
+
 end
 
 ---@param dt number
@@ -58,5 +74,6 @@ function _draw(dt)
   Player.draw_player_shadow(State.player, nil, nil)
   PlayerBullet.draw_all(State.player.bullets, State.player, dt)
   Player.draw(State.player, dt)
-  gfx.text("Hello, Usagi! " .. usagi.dump(State.player.position), 10, 10, gfx.COLOR_BLACK)
+  gfx.text("Hello, Usagi! " .. usagi.dump(State.player.position), 8, 10, gfx.COLOR_BLACK)
+  gfx.text("Camera: " .. usagi.dump(State.camera), 8, 64 + 16, gfx.COLOR_BLACK)
 end

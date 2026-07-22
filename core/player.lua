@@ -2,9 +2,11 @@ local Util = require('core.util')
 local Controls = require('core.controls')
 local Vector = require('core.vector')
 local PlayerBullet = require('core.player_bullet')
+local Camera = require('core.camera')
 
 local Player = {}
 
+Player.DEFAULT_SPRITE = 1
 Player.INITIAL_MAX_THRUST = 30 -- px/s
 Player.NORMAL_DRAG = 0.95
 Player.SHADOW_BASE_OPACITY = 0.1
@@ -24,12 +26,13 @@ Player.DRAW_ROTATION_OFFSET =  math.pi / 2
 ---@field left Player.Sightline
 ---@field right Player.Sightline
 
----@class Player.Camera
----@field position Usagi.Vec2
----@field offset Usagi.Vec2
-
 ---@class Player.Cannon.Placement
 ---@field center_offset Usagi.Vec2 e.g. x=4 y=14, x=-4 y=14, etc...
+---@field fire_spread Player.Cannon.FireSpread
+
+---@class Player.Cannon.FireSpread
+---@field left? number radians
+---@field right? number radians
 
 ---@class Player.Cannons.State
 ---@field primed_index integer 1 to 4, first 2x are inner, last 2x are outer
@@ -37,8 +40,6 @@ Player.DRAW_ROTATION_OFFSET =  math.pi / 2
 ---@field fire_timer number when the last shot was fired
 ---@field is_firing boolean
 ---@field placements Player.Cannon.Placement[]
-
-
 
 ---@class Player.State
 ---@field rotation number
@@ -48,10 +49,11 @@ Player.DRAW_ROTATION_OFFSET =  math.pi / 2
 ---@field delta Usagi.Vec2
 ---@field mouse Player.Mouse
 ---@field sightlines? Player.Sightlines
----@field camera Player.Camera
+---@field camera Entity.Camera
 ---@field max_thrust number
 ---@field cannons Player.Cannons.State
 ---@field bullets PlayerBullet.State[]
+---@field zindex number should be 1.0
 
 
 function Player.init()
@@ -65,13 +67,14 @@ function Player.init()
     max_thrust = Player.INITIAL_MAX_THRUST,
     camera = {
       position = {
-        x = usagi.GAME_W / 2 - usagi.SPRITE_SIZE / 2,
-        y = usagi.GAME_H / 2 - usagi.SPRITE_SIZE / 2
+        x = 0,
+        y = 0,
       },
       offset = {
         x = 0,
         y = 0,
-      }
+      },
+      zoom_factor = 1
     },
     mouse = {
       position = {
@@ -88,20 +91,33 @@ function Player.init()
       placements = {
         {
           center_offset = { x = -4, y = 10 },
+          fire_spread = { left = 0, right = 0 }
         },
         {
-          center_offset = { x = 4, y = 10  },
+          center_offset = { x = 4, y = 10 },
+          fire_spread = { left = 0, right = 0 }
         },
         {
           center_offset = { x = -8, y = 8 },
+          fire_spread = { left = math.pi/64, right = 0 }
         },
         {
           center_offset = { x = 8, y = 8 },
+          fire_spread = { left = 0, right = math.pi/64 }
         }
       }
     },
     bullets = {},
+    zindex = 1.0,
   }
+end
+
+---@param player Player.State
+---@param camera Camera
+function Player.update_entity_camera(player, camera)
+  player.camera.position = Camera.world_to_screen(camera, player.position)
+  player.camera.zoom_factor = Camera.zindexed_zoom_factor(camera, player.zindex)
+  player.camera.offset = camera.lookahead_offset
 end
 
 ---@param player Player.State
@@ -110,20 +126,20 @@ function Player.update_from_mouse_input(player, dt)
   local mouse_x, mouse_y = input.mouse()
 
 
-  local default_camera_x = usagi.GAME_W / 2 - usagi.SPRITE_SIZE / 2
-  local default_camera_y = usagi.GAME_H / 2 - usagi.SPRITE_SIZE / 2
+  -- local default_camera_x = usagi.GAME_W / 2 - usagi.SPRITE_SIZE / 2
+  -- local default_camera_y = usagi.GAME_H / 2 - usagi.SPRITE_SIZE / 2
 
-  player.camera.offset = {
-    x = (default_camera_x - mouse_x) * 0.1,
-    y = (default_camera_y - mouse_y) * 0.1,
-  }
+  -- player.camera.offset = {
+  --   x = (default_camera_x - mouse_x) * 0.1,
+  --   y = (default_camera_y - mouse_y) * 0.1,
+  -- }
 
   -- TODO: This should probably be camera.offset
   -- with camera.position handled by something else
-  player.camera.position = {
-    x = usagi.GAME_W / 2 - usagi.SPRITE_SIZE / 2 + player.camera.offset.x,
-    y = usagi.GAME_H / 2 - usagi.SPRITE_SIZE / 2 + player.camera.offset.y
-  }
+  -- player.camera.position = {
+  --   x = usagi.GAME_W / 2 - usagi.SPRITE_SIZE / 2 + player.camera.offset.x,
+  --   y = usagi.GAME_H / 2 - usagi.SPRITE_SIZE / 2 + player.camera.offset.y
+  -- }
 
 
   player.mouse = player.mouse or {}
@@ -210,12 +226,14 @@ end
 
 ---@param player Player.State
 ---@param position? Usagi.Vec2
-function Player.add_bullet(player, position)
-  local position = position or player.position
+---@param rotation? number should be player.rotation + tilts
+function Player.add_bullet(player, position, rotation)
+  rotation = rotation or player.rotation
+  position = position or player.position
   local bullet = PlayerBullet.new(
     position,
     1.0,
-    player.rotation,
+    rotation,
     player.velocity
     -- TODO: Need to adjust the speed by the player's velocity!
   )
@@ -239,13 +257,26 @@ function Player.update_firing(player, dt)
     local offset_angle = Vector.radians(cannon.center_offset)
     local magnitude = Vector.magnitude(cannon.center_offset)
     local target_angle = player.rotation + offset_angle - math.pi / 2
+
+    -- Add a bit of rotation by chance in there
+    local fire_spread = cannon.fire_spread or {}
+    local left_tilt = 0
+    local right_tilt = 0
+    if fire_spread.left then
+      left_tilt = math.random(0, math.floor(fire_spread.left * 1000)) / 1000
+    end
+    if fire_spread.right then
+      right_tilt = math.random(0, math.floor(fire_spread.right * 1000)) / 1000 * -1
+    end
+
+
     local rotated_position = Vector.add(player.position, util.vec_from_angle(target_angle, magnitude))
     --rotated_position = Vector.add(rotated_position, { x = 0, y = -usagi.SPRITE_SIZE/2 })
     -- local rotated_position = {
     --   x = player.position.x + magnitude * math.cos(player.rotation - offset_angle),
     --   y = player.position.y + magnitude * math.sin(player.rotation - offset_angle),
     -- }
-    Player.add_bullet(player, rotated_position)
+    Player.add_bullet(player, rotated_position, player.rotation + left_tilt + right_tilt)
     player.cannons.primed_index = (player.cannons.primed_index) % 4 + 1
     player.cannons.fire_timer = player.cannons.fire_delay
   end
@@ -305,7 +336,7 @@ function Player.draw_player_trail(player, dt)
   local trail_opacity = 0.1
 
   gfx.spr_ex(
-    1,
+    Player.DEFAULT_SPRITE,
     player.camera.position.x - player.velocity.x * 0.5 - usagi.SPRITE_SIZE / 2,
     player.camera.position.y - player.velocity.y * 0.5 - usagi.SPRITE_SIZE / 2,
     false,
@@ -316,7 +347,7 @@ function Player.draw_player_trail(player, dt)
   )
 
   gfx.spr_ex(
-    1,
+    Player.DEFAULT_SPRITE,
     player.camera.position.x - player.velocity.x - usagi.SPRITE_SIZE / 2,
     player.camera.position.y - player.velocity.y - usagi.SPRITE_SIZE / 2,
     false,
@@ -334,14 +365,31 @@ function Player.draw_main_sprite(player, dt)
   -- (the maths will suck)
 
   gfx.spr_ex(
-    1,
-    player.camera.position.x - usagi.SPRITE_SIZE / 2,
-    player.camera.position.y - usagi.SPRITE_SIZE / 2,
+    Player.DEFAULT_SPRITE,
+    (player.camera.position.x - usagi.SPRITE_SIZE / 2),
+    (player.camera.position.y - usagi.SPRITE_SIZE / 2),
     false,
     false,
     player.rotation + Player.DRAW_ROTATION_OFFSET,
-    gfx.COLOR_TRUE_WHITE, 1.0
+    gfx.COLOR_TRUE_WHITE,
+    1.0
   )
+  -- This is what you'd need to start with to get zooming working
+  -- gfx.sspr_ex(
+  --   0, -- dx
+  --   0, -- dy
+  --   usagi.SPRITE_SIZE, -- dw
+  --   usagi.SPRITE_SIZE, -- dh
+  --   (player.camera.position.x - usagi.SPRITE_SIZE / 2) * player.camera.zoom_factor, --sx
+  --   (player.camera.position.y - usagi.SPRITE_SIZE / 2) * player.camera.zoom_factor, --sy
+  --   usagi.SPRITE_SIZE * player.camera.zoom_factor, --sw
+  --   usagi.SPRITE_SIZE * player.camera.zoom_factor, --sh
+  --   false, --flip_x
+  --   false, --flip_y
+  --   player.rotation + Player.DRAW_ROTATION_OFFSET, -- rotation
+  --   gfx.COLOR_TRUE_WHITE, -- tint
+  --   1.0 -- alpha
+  -- )
 end
 
 ---@param sightlines? Player.Sightlines
@@ -375,6 +423,7 @@ end
 function Player.draw_targeting_circle(mouse, dt)
   -- Drawing the mouse cursor
   -- gfx.circ_fill(State.mouse.position.x, State.mouse.position.y, 4, gfx.COLOR_RED, 0.5)
+
   gfx.circ(mouse.position.x, mouse.position.y,
     -- TODO: consider making this a constant and sharing with the sightline endpoint radius?
     util.lerp(16, 64, mouse.distance_from_player / (usagi.GAME_W / 2)),

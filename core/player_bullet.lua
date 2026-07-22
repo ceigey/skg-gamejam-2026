@@ -78,7 +78,7 @@ function PlayerBullet.update(bullet, player, dt)
   bullet.velocity = Vector.multiplied(bullet.velocity, 1 + bullet.time_elapsed)
   bullet.position = Vector.add(bullet.position, bullet.velocity)
   if not PlayerBullet.in_bounds(bullet, player) then
-    print('BULLET CULLED')
+    print('BULLET CULLED, tilt' .. usagi.dump(bullet.rotation))
     bullet.hp = 0 -- culled
   end
 end

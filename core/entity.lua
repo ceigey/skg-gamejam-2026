@@ -1,0 +1,4 @@
+---@class Entity.Camera
+---@field position Usagi.Vec2
+---@field zoom_factor number
+---@field offset? Usagi.Vec2
