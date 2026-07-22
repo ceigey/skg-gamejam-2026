@@ -74,8 +74,8 @@ function _draw(dt)
   Player.draw_player_shadow(State.player, nil, nil)
   PlayerBullet.draw_all(State.player.bullets, State.player, dt)
   Player.draw(State.player, dt)
-  gfx.text_ex("Hello, Usagi! " .. usagi.dump(State.player.position), 8, 8, 1.0, 0, gfx.COLOR_BLACK, 0.5)
-  gfx.text_ex("Camera: " .. usagi.dump(State.camera), 8, 64 + 16, 1.0, 0, gfx.COLOR_BLACK, 0.5)
+  gfx.text_ex("Hello, Usagi! " .. usagi.dump(State.player.position), 8, 8, 1.0, 0, gfx.COLOR_BLACK, 0.25)
+  gfx.text_ex("Camera: " .. usagi.dump(State.camera), 8, 64 + 16, 1.0, 0, gfx.COLOR_BLACK, 0.25)
 
 
   -- local side_hud_color = gfx.COLOR_LIGHT_GRAY

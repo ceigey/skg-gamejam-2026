@@ -55,12 +55,25 @@ function PlayerBullet.bounding_box(player)
   }
 end
 
+function PlayerBullet.bounding_radius(player)
+  ---@type Usagi.Circ
+  return {
+    x = player.position.x,
+    y = player.position.y,
+    r = usagi.GAME_W
+  }
+end
+
 ---@param bullet PlayerBullet.State
 ---@param player Player.State
 function PlayerBullet.in_bounds(bullet, player)
-  return util.rect_overlap(
-    { x = bullet.position.x, y = bullet.position.y, h = 16, w = 4 },
-    PlayerBullet.bounding_box(player)
+  -- return util.rect_overlap(
+  --   { x = bullet.position.x, y = bullet.position.y, h = 16, w = 4 },
+  --   PlayerBullet.bounding_box(player)
+  -- )
+  return util.circ_rect_overlap(
+    PlayerBullet.bounding_radius(player),
+    { x = bullet.position.x, y = bullet.position.y, h = 16, w = 4 }
   )
 end
 
