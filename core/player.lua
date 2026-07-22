@@ -313,7 +313,7 @@ function Player.draw_player_shadow(player, zindex, opacity)
   opacity = opacity or Player.SHADOW_BASE_OPACITY
   local shadow_position = Player.calculate_shadow_position(player, zindex)
   gfx.spr_ex(
-    1,
+    Player.DEFAULT_SPRITE,
     shadow_position.x,
     shadow_position.y,
     false,
