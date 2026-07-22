@@ -74,6 +74,43 @@ function _draw(dt)
   Player.draw_player_shadow(State.player, nil, nil)
   PlayerBullet.draw_all(State.player.bullets, State.player, dt)
   Player.draw(State.player, dt)
-  gfx.text("Hello, Usagi! " .. usagi.dump(State.player.position), 8, 10, gfx.COLOR_BLACK)
-  gfx.text("Camera: " .. usagi.dump(State.camera), 8, 64 + 16, gfx.COLOR_BLACK)
+  gfx.text_ex("Hello, Usagi! " .. usagi.dump(State.player.position), 8, 8, 1.0, 0, gfx.COLOR_BLACK, 0.5)
+  gfx.text_ex("Camera: " .. usagi.dump(State.camera), 8, 64 + 16, 1.0, 0, gfx.COLOR_BLACK, 0.5)
+
+
+  -- local side_hud_color = gfx.COLOR_LIGHT_GRAY
+  -- gfx.rect_fill(
+  --   0,
+  --   0,
+  --   usagi.SPRITE_SIZE * 2,
+  --   usagi.GAME_H,
+  --   side_hud_color,
+  --   0.1
+  -- )
+  -- gfx.rect_fill(
+  --   usagi.GAME_W - usagi.SPRITE_SIZE * 2,
+  --   0,
+  --   usagi.SPRITE_SIZE * 2,
+  --   usagi.GAME_H,
+  --   side_hud_color,
+  --   0.1
+  -- )
+  -- gfx.line_ex(
+  --   usagi.SPRITE_SIZE * 2,
+  --   0,
+  --   usagi.SPRITE_SIZE * 2,
+  --   usagi.GAME_H,
+  --   1,
+  --   side_hud_color,
+  --   0.25
+  -- )
+  -- gfx.line_ex(
+  --   usagi.GAME_W - usagi.SPRITE_SIZE * 2,
+  --   0,
+  --   usagi.GAME_W - usagi.SPRITE_SIZE * 2,
+  --   usagi.GAME_H,
+  --   1,
+  --   side_hud_color,
+  --   0.25
+  -- )
 end
