@@ -54,6 +54,7 @@ Enemy.DefaultSprite = {
 --- And of course, all the firing stuff:
 ---@field cannon? Enemy.Definition.Cannon
 ---@field aoes? Enemy.Definition.AOE[]
+---@field max_rotation_per_tick? number
 
 
 ---@type table<Enemy.Type, Enemy.Definition>
@@ -97,7 +98,8 @@ Enemy.Definitions = {
     sprite_index = Enemy.DefaultSprite.RESUPPLIER,
     base_hp = 100,
     initial_max_thrust = 10,
-    normal_drag = 0.7,
+    normal_drag = 0.97,
+    max_rotation_per_tick = math.pi / 64,
     normal_hitboxes = {
       {
         bounds = { x = -10, y = -12, w = 8, h = 8 },
@@ -253,14 +255,16 @@ end
 ---@param player Player.State
 ---@param dt number
 function Enemy.update_aim(enemy, player, dt)
+  local definition = Enemy.definition(enemy)
+  local max_rotation_per_tick = definition.max_rotation_per_tick or math.pi / 32
   local target_rotation = math.atan(
     player.position.y - enemy.position.y,
     player.position.x - enemy.position.x
   )
-  enemy.rotation = Util.clamp_radians(target_rotation, enemy.rotation, math.pi / 32)
+  enemy.rotation = Util.clamp_radians(target_rotation, enemy.rotation, max_rotation_per_tick)
   enemy.random_direction_bias_timer = enemy.random_direction_bias_timer + dt
-  if enemy.random_direction_bias_timer > 1 then
-    enemy.random_direction_bias = math.pi / 16 * math.random(-10, 10) / 10
+  if enemy.random_direction_bias_timer > 0.5 + math.random(-10, 10) / 100 then
+    enemy.random_direction_bias = math.pi / 8 * math.random(-10, 10) / 10
     enemy.random_direction_bias_timer = 0
   end
 end
