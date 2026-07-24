@@ -158,6 +158,7 @@ function PlayerBullet.draw_all(bullets, player, dt)
     PlayerBullet.draw(bullet, player, dt)
   end
   gfx.text("Bullets: " .. usagi.dump(#bullets), 8, 64, gfx.COLOR_BLACK)
+
 end
 
 return PlayerBullet

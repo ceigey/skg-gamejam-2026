@@ -3,6 +3,7 @@ local CloudParallax = require('core.cloud_parallax')
 local Player = require('core.player')
 local PlayerBullet = require('core.player_bullet')
 local Camera = require('core.camera')
+local Enemy = require('core.enemy')
 
 PARALLAX_FACTORS =  { 0.2, 0.4, 0.6, 0.8 }
 
@@ -29,16 +30,37 @@ function _init()
     cloud_parallax = {
       particles = {}
     },
-    camera = Camera.init()
+    camera = Camera.init(),
+    enemies = {
+      Enemy.init("SCOUT"),
+      Enemy.init("ARROWHEAD"),
+      Enemy.init("ARROWHEAD"),
+      Enemy.init("ARROWHEAD"),
+      Enemy.init("RESUPPLIER")
+    }
   }
 
   Camera.set_position(State.camera, State.player.position)
+
+  Enemy.teleport(State.enemies[1], { x = 128, y = -128 })
+  Enemy.teleport(State.enemies[2], { x = 256, y = 0 })
+  Enemy.teleport(State.enemies[3], { x = 256 + 64, y = 64 })
+  Enemy.teleport(State.enemies[4], { x = 256, y = 128 })
+  Enemy.teleport(State.enemies[5], { x = 256, y = 512 })
+
 end
 
 ---@param dt number
 function _update(dt)
+  --- Camera updates!
   Player.update_entity_camera(State.player, State.camera)
   Player.update(State.player, dt)
+
+  for i, enemy in ipairs(State.enemies) do
+    Enemy.update_entity_camera(enemy, State.camera)
+    Enemy.update(enemy, State.player, dt)
+  end
+
 
   -- Camera work!
   Camera.set_target(
@@ -70,8 +92,13 @@ function _draw(dt)
 
 
   CloudParallax.draw(State.cloud_parallax)
+  Player.draw_shadow(State.player, nil, nil)
 
-  Player.draw_player_shadow(State.player, nil, nil)
+  for i, enemy in ipairs(State.enemies) do
+    Enemy.draw_shadow(enemy, nil, nil)
+    Enemy.draw(enemy, dt)
+  end
+
   PlayerBullet.draw_all(State.player.bullets, State.player, dt)
   Player.draw(State.player, dt)
   gfx.text_ex("Hello, Usagi! " .. usagi.dump(State.player.position), 8, 8, 1.0, 0, gfx.COLOR_BLACK, 0.25)

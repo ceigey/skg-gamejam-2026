@@ -3,14 +3,15 @@ local Controls = require('core.controls')
 local Vector = require('core.vector')
 local PlayerBullet = require('core.player_bullet')
 local Camera = require('core.camera')
+local Shadow = require('core.shadow')
 
 local Player = {}
 
 Player.DEFAULT_SPRITE = 1
 Player.INITIAL_MAX_THRUST = 30 -- px/s
 Player.NORMAL_DRAG = 0.95
-Player.SHADOW_BASE_OPACITY = 0.1
-Player.SHADOW_ZINDEX = 64
+Player.SHADOW_BASE_OPACITY = Shadow.OPACITY
+Player.SHADOW_OFFSET = Shadow.RIGHT_ANGLE_OFFSET
 Player.STARTING_FIRE_DELAY = 0.02 -- seconds... about 5 frames
 Player.DRAW_ROTATION_OFFSET =  math.pi / 2
 
@@ -158,7 +159,7 @@ function Player.update_rotation(player, dt)
     player.mouse.position.y - player.camera.position.y,
     player.mouse.position.x - player.camera.position.x
   )
-  player.rotation = Util.clamp_radians(target_rotation, State.player.rotation, math.pi / 16)
+  player.rotation = Util.clamp_radians(target_rotation, player.rotation, math.pi / 16)
 end
 
 ---@param player Player.State
@@ -253,6 +254,7 @@ function Player.update_firing(player, dt)
 
   if player.cannons.fire_timer <= 0 and player.cannons.is_firing then
     -- print("FIRING BULLETS" .. player.cannons.primed_index)
+    sfx.play_ex("fire", 0.2, math.random(5, 8) / 100.0, 0)
     local cannon = player.cannons.placements[player.cannons.primed_index]
     local offset_angle = Vector.radians(cannon.center_offset)
     local magnitude = Vector.magnitude(cannon.center_offset)
@@ -297,19 +299,19 @@ end
 ---@param player Player.State
 ---@param zindex? number default 64
 function Player.calculate_shadow_position(player, zindex)
-  zindex = zindex or Player.SHADOW_ZINDEX
+  zindex = zindex or Player.SHADOW_OFFSET
   ---@type Usagi.Vec2
   return {
-    x = player.camera.position.x - zindex - usagi.SPRITE_SIZE / 2,
-    y = player.camera.position.y + zindex - usagi.SPRITE_SIZE / 2,
+    x = player.camera.position.x + (Shadow.X_DIRECTION * zindex) - usagi.SPRITE_SIZE / 2,
+    y = player.camera.position.y + (Shadow.Y_DIRECTION * zindex) - usagi.SPRITE_SIZE / 2,
   }
 end
 
 ---@param player Player.State
 ---@param zindex? number default 64
 ---@param opacity? number default 0.1
-function Player.draw_player_shadow(player, zindex, opacity)
-  zindex = zindex or Player.SHADOW_ZINDEX
+function Player.draw_shadow(player, zindex, opacity)
+  zindex = zindex or Player.SHADOW_OFFSET
   opacity = opacity or Player.SHADOW_BASE_OPACITY
   local shadow_position = Player.calculate_shadow_position(player, zindex)
   gfx.spr_ex(
