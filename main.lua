@@ -13,8 +13,8 @@ PARALLAX_FACTORS =  { 0.2, 0.4, 0.6, 0.8 }
 function _config()
   ---@type Usagi.Config
   return {
-    name = "Game",
-    game_id = "com.usagiengine.YOURGAMENAME",
+    name = "Top-Down Cloud Shooter Demo - SKG Jam 2026",
+    game_id = "com.usagiengine.ceigeytopdowndemoskg2026",
     game_height = 180 * 2,
     game_width = 320 * 2,
     sprite_size = 32,
