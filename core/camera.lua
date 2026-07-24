@@ -87,7 +87,7 @@ end
 ---@param dt number
 function Camera.update(camera, dt)
   Camera.approach_target(camera)
-  Camera.zoom(camera)
+  -- Camera.zoom(camera)
 end
 
 --- Follows the "Screen = World - Offset" principle

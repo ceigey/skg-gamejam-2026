@@ -2,6 +2,7 @@ local Vector = require('core.vector')
 local Camera = require('core.camera')
 local Shadow = require('core.shadow')
 local Util = require('core.util')
+local Hitbox = require('core.hitbox')
 
 
 local Enemy = {}
@@ -62,7 +63,7 @@ Enemy.Definitions = {
   ---@type Enemy.Definition
   SCOUT = {
     sprite_index = Enemy.DefaultSprite.SCOUT,
-    base_hp = 10,
+    base_hp = 2,
     initial_max_thrust = 15,
     normal_drag = 0.97,
     normal_hitboxes = {
@@ -73,12 +74,12 @@ Enemy.Definitions = {
     cannon = {
       fire_type = "ORB",
       fire_delay = 5.0, -- seconds
-    }
+    },
   },
   ---@type Enemy.Definition
   ARROWHEAD = {
     sprite_index = Enemy.DefaultSprite.ARROWHEAD,
-    base_hp = 5,
+    base_hp = 1,
     initial_max_thrust = 25,
     normal_drag = 0.95,
     normal_hitboxes = {
@@ -96,22 +97,22 @@ Enemy.Definitions = {
   ---@type Enemy.Definition
   RESUPPLIER = {
     sprite_index = Enemy.DefaultSprite.RESUPPLIER,
-    base_hp = 100,
+    base_hp = 20,
     initial_max_thrust = 10,
     normal_drag = 0.97,
-    max_rotation_per_tick = math.pi / 64,
+    max_rotation_per_tick = math.pi / 128,
     normal_hitboxes = {
       {
-        bounds = { x = -10, y = -12, w = 8, h = 8 },
-        damage_multiplier = 0, -- invincible
+        bounds = { x = -6, y = -8, r = 5 },
+        damage_multiplier = 0.1, -- nearly invincible
       },
       {
-        bounds = { x = 2, y = -12, w = 8, h = 8 },
-        damage_multiplier = 0, -- invincible
+        bounds = { x = 6, y = -8, r = 5 },
+        damage_multiplier = 0.1, -- nearly invincible
       },
       {
-        bounds = { x = 0, y = 0, r = 6 },
-        damage_multiplier = 1.5, -- weakspot
+        bounds = { x = 0, y = 0, r = 8 },
+        damage_multiplier = 5, -- weakspot
       },
     },
   },
@@ -192,6 +193,7 @@ Enemy.Definitions = {
 ---@field random_direction_bias number
 ---@field random_direction_bias_timer number
 ---@field timer number
+---@field hitboxes Hitbox.Definition[]
 
 ---Get the enemy definition based on either the state
 ---or the type identifier
@@ -239,6 +241,12 @@ function Enemy.init(enemy_type)
     random_direction_bias = 0,
     random_direction_bias_timer = 0,
     timer = 0,
+    hitboxes = Hitbox.bring_all_into_world(
+      definition.normal_hitboxes,
+      { x = 0, y = 0 },
+      0.0,
+      0.0
+    )
   }
 end
 
@@ -267,6 +275,17 @@ function Enemy.update_aim(enemy, player, dt)
     enemy.random_direction_bias = math.pi / 8 * math.random(-10, 10) / 10
     enemy.random_direction_bias_timer = 0
   end
+end
+
+---@param enemy Enemy.State
+function Enemy.update_hitboxes(enemy)
+  local definition = Enemy.definition(enemy)
+  enemy.hitboxes = Hitbox.bring_all_into_world(
+    definition.normal_hitboxes,
+    enemy.position,
+    Enemy.DRAW_ROTATION_OFFSET,
+    enemy.rotation
+  )
 end
 
 
@@ -336,7 +355,27 @@ function Enemy.update(enemy, player, dt)
   enemy.timer = enemy.timer + dt
   Enemy.update_aim(enemy, player, dt)
   Enemy.update_movement(enemy, player, dt)
+  Enemy.update_hitboxes(enemy)
 end
+
+
+---@param enemies Enemy.State[]
+---@param player Player.State
+---@param dt number
+function Enemy.update_all(enemies, player, dt)
+  for i = #enemies, 1, -1 do
+    local enemy = enemies[i]
+    if enemy.hp <= 0 then
+      print('ENEMY DEAD?')
+      -- TODO: update score in a better way! events?
+      State.score = State.score + enemy.max_hp * 100
+      table.remove(enemies, i)
+    else
+      Enemy.update(enemy, player, dt)
+    end
+  end
+end
+
 
 ---@param enemy Enemy.State
 ---@param zindex? number default 64
@@ -370,11 +409,26 @@ function Enemy.draw_shadow(enemy, zindex, opacity)
   )
 end
 
+---@param enemy Enemy.State
+function Enemy.draw_hitboxes(enemy)
+  local definition = Enemy.definition(enemy)
+  local hitboxes = Hitbox.bring_all_into_world(
+    definition.normal_hitboxes,
+    enemy.camera.position,
+    Enemy.DRAW_ROTATION_OFFSET,
+    enemy.rotation
+  )
+  for i, hitbox in ipairs(hitboxes) do
+    Hitbox.draw_debug(hitbox.bounds)
+  end
+end
+
 ---comment
 ---@param enemy Enemy.State
 ---@param dt number
 function Enemy.draw(enemy, dt)
   Enemy.draw_main_sprite(enemy, dt)
+  -- Enemy.draw_hitboxes(enemy)
 end
 
 return Enemy

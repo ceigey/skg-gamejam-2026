@@ -4,6 +4,9 @@ local Player = require('core.player')
 local PlayerBullet = require('core.player_bullet')
 local Camera = require('core.camera')
 local Enemy = require('core.enemy')
+local Spawner = require('core.spawner')
+local Collision = require('core.collision')
+local Particle = require('core.particle')
 
 PARALLAX_FACTORS =  { 0.2, 0.4, 0.6, 0.8 }
 
@@ -37,7 +40,16 @@ function _init()
       Enemy.init("ARROWHEAD"),
       Enemy.init("ARROWHEAD"),
       Enemy.init("RESUPPLIER")
-    }
+    },
+    ---@type Spawner.State
+    spawner = {
+      iteration = 1,
+      spawn_cooldown = 10,
+      timer = 0,
+    },
+    ---@type Particle.State[]
+    particles = {},
+    score = 0,
   }
 
   Camera.set_position(State.camera, State.player.position)
@@ -58,9 +70,9 @@ function _update(dt)
 
   for i, enemy in ipairs(State.enemies) do
     Enemy.update_entity_camera(enemy, State.camera)
-    Enemy.update(enemy, State.player, dt)
   end
 
+  Enemy.update_all(State.enemies, State.player, dt)
 
   -- Camera work!
   Camera.set_target(
@@ -74,6 +86,10 @@ function _update(dt)
   CloudParallax.update(State.cloud_parallax, State.player)
   PlayerBullet.update_all(State.player.bullets, State.player, dt)
 
+  Collision.player_bullets_vs_enemies(State.player.bullets, State.enemies, State.particles)
+
+  Spawner.update(State.spawner, State.enemies, State.player, dt)
+  Particle.update_all(State.particles)
 end
 
 ---@param dt number
@@ -101,8 +117,17 @@ function _draw(dt)
 
   PlayerBullet.draw_all(State.player.bullets, State.player, dt)
   Player.draw(State.player, dt)
-  gfx.text_ex("Hello, Usagi! " .. usagi.dump(State.player.position), 8, 8, 1.0, 0, gfx.COLOR_BLACK, 0.25)
-  gfx.text_ex("Camera: " .. usagi.dump(State.camera), 8, 64 + 16, 1.0, 0, gfx.COLOR_BLACK, 0.25)
+  Particle.draw_all(State.particles, State.camera)
+
+  gfx.text("Enemies: " .. #State.enemies, 8, 8, gfx.COLOR_BLACK)
+  gfx.text("Countdown: " .. util.round(State.spawner.spawn_cooldown), 8, 24, gfx.COLOR_BLACK)
+  gfx.text("Wave: " .. State.spawner.iteration, 8, 40, gfx.COLOR_BLACK)
+  gfx.text("Particles: " .. #State.particles, 8, 128, gfx.COLOR_BLACK)
+  gfx.text("Score: " .. util.round(State.score), 8, 128 + 16, gfx.COLOR_BLACK)
+
+
+  -- gfx.text_ex("Hello, Usagi! " .. usagi.dump(State.player.position), 8, 8, 1.0, 0, gfx.COLOR_BLACK, 0.25)
+  -- gfx.text_ex("Camera: " .. usagi.dump(State.camera), 8, 64 + 16, 1.0, 0, gfx.COLOR_BLACK, 0.25)
 
 
   -- local side_hud_color = gfx.COLOR_LIGHT_GRAY
